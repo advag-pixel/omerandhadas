@@ -151,7 +151,7 @@ body.isintro #logo{display:none}
 <div class="lead" id="vcount"></div>
 <div class="verdict" id="verdict"></div>
 <div class="cols hide" id="rcols"><div class="col" id="ry"><h3>✅ אמרו: זה עומר</h3><div id="ryl"></div></div><div class="col" id="rn"><h3>❌ אמרו: לא עומר</h3><div id="rnl"></div></div></div>
-<div class="lead" id="lead"></div><div id="cmt"></div>
+<div id="oc" style="font-size:clamp(20px,3vw,34px);color:#fff;margin:8px 0;min-height:1.2em"></div><div class="lead" id="lead"></div><div id="cmt"></div>
 <div class="row"><button class="hide" id="pnext">הבאה</button></div></div>
 <div id="who" class="view hide"><h1>מי אמרה מה?</h1><div class="sub">לחצי על שם כדי להעביר אותו לצד השני</div>
 <div class="cols" id="vcols"><div class="col vy"><h3>✅ זה עומר</h3><div id="vyl" class="vlist"></div></div><div class="col vn"><h3>❌ לא עומר</h3><div id="vnl" class="vlist"></div></div><div class="col vl" id="vlcol"><h3>⏰ לא הספיקו</h3><div id="vll" class="vlist"></div></div></div>
@@ -405,7 +405,7 @@ const SFX=(()=>{
     cheer(){noise({f:1100,q:.5,d:2.2,v:.2,a:.5});noise({f:2600,q:.7,d:1.6,v:.1,a:.4,t:.2})},
     trombone(){
       [[233,.38,0],[220,.38,.45],[208,.38,.9],[196,1.2,1.35]].forEach(([f,d,t],i)=>tone({f,f2:i==3?170:null,t,d,type:'sawtooth',v:.3,lp:900,vib:i==3?6:0,vd:.04}))},
-    correct(){S.tada();setTimeout(S.horn,350);S.cheer();playA('clap',.9);setTimeout(()=>playA('ulu',.9),900)},
+    correct(){S.tada();playA('clap',.8)},
     wrong(){const r=Math.random();if(r<.28)S.trombone();else if(r<.5)playA('fart');else if(r<.7)playA('sponge');else if(r<.85)playA('fail1');else playA('fail2')},
   };
   return S;
@@ -420,12 +420,13 @@ function leadHTML(){
   const a=NAMES.slice().sort((x,y)=>score[y]-score[x]).slice(0,3).filter(n=>score[n]>0);
   return a.length?'🏆 המובילות: '+a.map((n,i)=>['🥇','🥈','🥉'][i]+' '+n+' ('+score[n]+')').join(' · '):'';
 }
+let pgen=0;function gT(fn,ms){const g=pgen;return setTimeout(()=>{if(g===pgen)fn()},ms)}
 function startPhoto(){
-  clearInterval(ptv);ptv=null;clearTimeout(autoRev);pi++;if(pi>=P.length){return finale()}
+  clearInterval(ptv);ptv=null;clearTimeout(autoRev);pgen++;try{AUD.clap.onended=null;['clap','ulu','fart','fail1','fail2','sponge'].forEach(k=>AUD[k].pause())}catch(e){}pi++;if(pi>=P.length){return finale()}
   PD=P[pi];show('photo');pphase='look';yes=new Set();pushState({phase:'look',pi,n:P.length});$('vcount').textContent=netOK?'🗳️ הצביעו 0 מתוך '+NAMES.length:'';
   $('pn').textContent='תמונה '+(pi+1)+' מתוך '+P.length;
   $('pq').textContent='זה עומר או לא?';$('verdict').textContent='';$('verdict').className='verdict';
-  $('pnext').classList.add('hide');$('rcols').classList.add('hide');$('lead').textContent='';$('cmt').textContent='';cmCache[pi]=cmCache[pi];graceUntil=Date.now()+8000;
+  $('pnext').classList.add('hide');$('rcols').classList.add('hide');$('lead').textContent='';$('cmt').textContent='';$('oc').textContent='';cmCache[pi]=cmCache[pi];graceUntil=Date.now()+8000;
   $('full').classList.add('hide');$('full').classList.remove('zin');
   // puzzle
   const pz=$('pz');pz.innerHTML='';pz.style.cssText='display:block;width:min(88vw,calc(44vh*'+PD.a+'));aspect-ratio:'+PD.a;
@@ -440,13 +441,13 @@ function startPhoto(){
   }
   pleft=10;$('pring').classList.remove('hide','low');$('rfg').style.transition='none';$('rfg').style.strokeDashoffset='0';$('ptimer').textContent='מוכנות…';
   clearInterval(ptv);
-  setTimeout(()=>{ // start clock + assemble
+  gT(()=>{ // start clock + assemble
     SFX.pop();$('ptimer').textContent=pleft;ptv=setInterval(ptick,1000);requestAnimationFrame(()=>{$('rfg').style.transition='stroke-dashoffset 10s linear';$('rfg').style.strokeDashoffset='283'});
       },1500);
 }
 function ptick(){pleft--;$('ptimer').textContent=Math.max(pleft,0);$('pring').classList.toggle('low',pleft<=3);SFX.tick(pleft);
   if(pleft<=0){clearInterval(ptv);pphase='vote';$('pring').classList.add('hide');SFX.timeup();
-    $('pq').textContent='נגמר הזמן';$('vcount').textContent='';pushState({phase:'lock',pi});setTimeout(()=>{const vm=votesMap[pi]||{};yes=new Set(Object.keys(vm).filter(n=>vm[n]));pset=Object.keys(vm).length?NAMES.filter(n=>n in vm):(NAMES.some(isOn)?[]:NAMES.slice());show('who');buildChips();clearTimeout(autoRev);if(Object.keys(vm).length)autoRev=setTimeout(()=>$('reveal').click(),5000)},2200)}}
+    $('pq').textContent='נגמר הזמן';$('vcount').textContent='';pushState({phase:'lock',pi});gT(()=>{const vm=votesMap[pi]||{};yes=new Set(Object.keys(vm).filter(n=>vm[n]));pset=Object.keys(vm).length?NAMES.filter(n=>n in vm):(NAMES.some(isOn)?[]:NAMES.slice());show('who');buildChips();clearTimeout(autoRev);},2200)}}
 function buildChips(){
   const Y=$('vyl'),N=$('vnl'),L=$('vll');Y.innerHTML='';N.innerHTML='';L.innerHTML='';
   const late=pset.length<NAMES.length?NAMES.filter(n=>!pset.includes(n)):[];$('vlcol').style.display=late.length?'':'none';
@@ -454,22 +455,22 @@ function buildChips(){
   pset.forEach(n=>{const b=document.createElement('button');b.className='chip';b.textContent=n;b.onclick=()=>{if(yes.has(n))yes.delete(n);else yes.add(n);(yes.has(n)?Y:N).appendChild(b);SFX.pop()};(yes.has(n)?Y:N).appendChild(b)});
 }
 $('reveal').onclick=()=>{
-  clearTimeout(autoRev);if(pphase!=='vote')return;pphase='rev';SFX.whoosh();
+  clearTimeout(autoRev);if(pphase!=='vote')return;pgen++;pphase='rev';SFX.whoosh();
   show('photo');pphase='rev';$('pq').textContent='והתשובה היא...';
   pb.tiles.forEach((d,p)=>{d.style.transitionDelay=(Math.random()*.4)+'s';d.style.left=((p%PC)*100/PC)+'%';d.style.top=(Math.floor(p/PC)*100/PR)+'%'});
-  setTimeout(()=>$('pz').classList.add('done'),1400);
-  setTimeout(()=>{$('pz').classList.add('gone');
-    setTimeout(()=>{const f=$('full');f.src='data:image/jpeg;base64,'+PD.r;f.classList.remove('hide');void f.offsetWidth;f.classList.add('zin');
+  gT(()=>$('pz').classList.add('done'),1400);
+  gT(()=>{$('pz').classList.add('gone');
+    gT(()=>{const f=$('full');f.src='data:image/jpeg;base64,'+PD.r;f.classList.remove('hide');void f.offsetWidth;f.classList.add('zin');
       const v=$('verdict');
-      if(PD.omer){v.textContent='✔ זה עומר';v.className='verdict good';SFX.correct();confetti()}
-      else{v.textContent='✖ זה לא עומר';v.className='verdict bad';SFX.wrong()}
+      if(PD.omer){v.textContent='✔ זה עומר';v.className='verdict good';playA('clap',.9);AUD.clap.onended=()=>{AUD.clap.onended=null;playA('ulu',.9)};confetti()}
+      else{v.textContent='✖ זה לא עומר';v.className='verdict bad';SFX.whoosh()}
       $('pq').textContent='';
       const Y=pset.filter(n=>yes.has(n)),N=pset.filter(n=>!yes.has(n));
-      lastWrong=pset.filter(n=>(PD.omer?!yes.has(n):yes.has(n)));(scored[pi]||[]).forEach(n=>score[n]--);scored[pi]=(PD.omer?Y:N).slice();scored[pi].forEach(n=>score[n]++);const vmx=votesMap[pi]||{};
+      lastWrong=pset.filter(n=>(PD.omer?!yes.has(n):yes.has(n)));(scored[pi]||[]).forEach(n=>score[n]--);scored[pi]=(PD.omer?Y:N).slice();scored[pi].forEach(n=>score[n]++);OC=outcomeLine();const vmx=votesMap[pi]||{};
       $('ryl').innerHTML=Y.map(n=>'<span class="nm">'+n+'</span>').join('')||'—';
       $('rnl').innerHTML=N.map(n=>'<span class="nm">'+n+'</span>').join('')||'—';
       $('ry').className='col '+(PD.omer?'ok':'no');$('rn').className='col '+(PD.omer?'no':'ok');
-      pushState({phase:'rev',pi,omer:PD.omer,lead:leadHTML(),cmt:commentLine()});setTimeout(()=>{$('rcols').classList.remove('hide');$('lead').textContent=leadHTML();$('cmt').textContent=commentLine();$('pnext').classList.remove('hide')},1400)},500)},2300);
+      pushState({phase:'rev',pi,omer:PD.omer,lead:leadHTML(),cmt:commentLine(),oc:OC});gT(()=>{$('rcols').classList.remove('hide');$('oc').textContent=OC;{const g=outcomeSound();g()}$('pnext').textContent=[5,11,17].includes(pi)?'לשלב הבא ➡️':'לתמונה הבאה ➡️';$('lead').textContent=leadHTML();$('cmt').textContent=commentLine();$('pnext').classList.remove('hide')},1400)},500)},2300);
 };
 $('pnext').onclick=()=>{
   if([5,11,17].includes(pi))penalty(()=>show('lotto'));
@@ -555,7 +556,7 @@ function renderMe(){
   if(g.phase==='rev'){const v=myVote[g.gid+'_'+g.pi];
     if(v===undefined){big.textContent='😴 לא הצבעת';big.className='verdict'}
     else if(v===g.omer){big.textContent='✅ צדקת!';big.className='verdict good'}else{big.textContent='❌ טעית!';big.className='verdict bad'}
-    sub.textContent=g.omer?'זה היה עומר':'זה לא היה עומר';lead.textContent=(g.lead||'')+(g.cmt?'  —  '+g.cmt:'');return}
+    sub.textContent=g.omer?'זה היה עומר':'זה לא היה עומר';lead.textContent=(g.oc?g.oc+'\n':'')+(g.lead||'')+(g.cmt?'  —  '+g.cmt:'');lead.style.whiteSpace='pre-line';return}
   const mx=document.getElementById('mex')||(()=>{const d=document.createElement('div');d.id='mex';d.className='mex';$('mestate').appendChild(d);return d})();
   if(!['tswrite','tsvote'].includes(g.phase)&&mx.dataset.k){mx.innerHTML='';mx.dataset.k=''}
   if(g.phase==='pen'){if(g.who===myName){big.textContent='🥉 את במקום האחרון!';big.className='verdict bad';sub.textContent='משימה + צ׳ייסר – תסתכלי על המסך 🥃'}else{big.textContent='🥉 מקום אחרון: '+g.who;sub.textContent='היא מקבלת משימה וצ׳ייסר 😈'}return}
@@ -577,7 +578,7 @@ function renderMe(){
 }
 
 /* ===== תוספות: צ'ייסר, עונש, אמת או שקר, כרזת יציאה ===== */
-let lastWrong=[],cmCache={},graceUntil=0,usedNarr=[];
+let OC='',lastWrong=[],cmCache={},graceUntil=0,usedNarr=[];
 function rnd(a){return a[Math.floor(Math.random()*a.length)]}
 function poolNames(){const j=NAMES.filter(isOn);return j.length?j:NAMES.slice()}
 function commentLine(){
@@ -591,6 +592,19 @@ function commentLine(){
         r=rnd(['מה קורה עם '+n+'? היא לא מצליחה? שתתה יותר מדי? 🍷',n+', הכל בסדר? נראה שהעיניים עוד לא התחממו 😅',n+' מנחשת כאילו היא עוצמת עיניים 🙈',n+', תנשמי... זה רק משחק, ועומר לא מתחבא 😂'])}
     }}
   cmCache[pi]=r;return r}
+function outcomeLine(){
+  const W=lastWrong,tot=pset.length;if(!tot)return '';
+  if(!W.length)return rnd(['כולן צדקו! 👏 מישהי מדליפה תשובות? 🕵️‍♀️','וואו, כולן צדקו! אתן מכירות אותו טוב מדי 😏']);
+  if(W.length===tot)return rnd(['אף אחת לא צדקה! 😱 עומר חכם מכולן','כולן טעו! 🙈 צריך משקפיים לכולן']);
+  const n=W.join(', ');
+  if(W.length===1)return rnd(['וואו '+n+', איך זה קרה? 🙈',n+' טעתה! הלב שלנו איתך 💔',n+', זה בסדר, גם לבלשית הכי טובה יש יום רע 😅']);
+  return rnd([n+' טעו! קבוצת התמיכה נפגשת בפינה 🫂',n+'... איפה הייתן? 😂',n+' טעו, אבל אנחנו אוהבות אתן 💕'])}
+function outcomeSound(){
+  const W=lastWrong.length,tot=pset.length;
+  if(!tot||PD.omer)return()=>{};
+  if(W===0)return()=>{SFX.chime();SFX.cheer()};
+  if(W>tot/2)return()=>SFX.wrong();
+  return()=>SFX.chime()}
 function showOv(title,body,btns){
   $('ovt').innerHTML='<h1>'+title+'</h1><div class="ovbody">'+body+'</div>';const b=$('ovb');b.innerHTML='';
   (btns||[]).forEach(([t,fn])=>{const x=document.createElement('button');x.textContent=t;x.onclick=()=>{fn()};b.appendChild(x)});
