@@ -470,13 +470,13 @@ $('reveal').onclick=()=>{
       $('ryl').innerHTML=Y.map(n=>'<span class="nm">'+n+'</span>').join('')||'—';
       $('rnl').innerHTML=N.map(n=>'<span class="nm">'+n+'</span>').join('')||'—';
       $('ry').className='col '+(PD.omer?'ok':'no');$('rn').className='col '+(PD.omer?'no':'ok');
-      pushState({phase:'rev',pi,omer:PD.omer,lead:leadHTML(),cmt:commentLine(),oc:OC});gT(()=>{$('rcols').classList.remove('hide');$('oc').textContent=OC;{const g=outcomeSound();g()}$('pnext').textContent=[5,11,17].includes(pi)?'לשלב הבא ➡️':'לתמונה הבאה ➡️';$('lead').textContent=leadHTML();$('cmt').textContent=commentLine();$('pnext').classList.remove('hide')},1400)},500)},2300);
+      pushState({phase:'rev',pi,omer:PD.omer,lead:leadHTML(),cmt:commentLine(),oc:OC});gT(()=>{$('rcols').classList.remove('hide');$('oc').textContent=OC;{const g=outcomeSound();g()}$('pnext').textContent=(pi%3===2&&pi+1<P.length)?'לשלב הבא ➡️':'לתמונה הבאה ➡️';$('lead').textContent=leadHTML();$('cmt').textContent=commentLine();$('pnext').classList.remove('hide')},1400)},500)},2300);
 };
 $('pnext').onclick=()=>{
-  if([5,11,17].includes(pi))penalty(()=>show('lotto'));
+  if(pi%3===2&&pi+1<P.length){if(pi%6===5)penalty(()=>show('lotto'));else show('lotto')}
   else startPhoto();
 };
-function afterLotto(){tfGame(()=>startPhoto())}
+function afterLotto(){if(pi%6===5)tfGame(()=>startPhoto());else startPhoto()}
 function navBack(){
   clearInterval(tv);clearInterval(ptv);clearTimeout(autoRev);
   const v=['photo','who','lotto','finale'].find(x=>!$(x).classList.contains('hide'));
@@ -498,7 +498,7 @@ function finale(){
   show('finale');pushState({phase:'end',lead:leadHTML()});
   const a=NAMES.slice().sort((x,y)=>score[y]-score[x]);
   $('fl').innerHTML=a.map((n,i)=>'<li><span>'+(['🥇','🥈','🥉'][i]||(i+1)+'.')+' '+n+'</span><b>'+score[n]+'</b></li>').join('');
-  confetti();fanfare();setTimeout(confetti,1500);
+  confetti();fanfare();SFX.cheer();setTimeout(confetti,1500);
 }
 $('istart').onclick=()=>{GID=Date.now().toString(36);votesMap={};P=buildSet(+$('cnt').value);pi=-1;startPhoto()};
 
@@ -602,7 +602,7 @@ function outcomeLine(){
 function outcomeSound(){
   const W=lastWrong.length,tot=pset.length;
   if(!tot||PD.omer)return()=>{};
-  if(W===0)return()=>{SFX.chime();SFX.cheer()};
+  if(W===0)return()=>{SFX.chime()};
   if(W>tot/2)return()=>SFX.wrong();
   return()=>SFX.chime()}
 function showOv(title,body,btns){
@@ -621,7 +621,7 @@ function chaserNow(){
 function penalty(next){
   const pool=poolNames(),mx=Math.max(...pool.map(n=>score[n])),mn=Math.min(...pool.map(n=>score[n]));
   const tasks=ITEMS.filter(i=>i.k==='t');
-  const hadas=()=>{pushState({phase:'chaser',txt:'צ׳ייסר לבחירת הדס'});SFX.horn();SFX.cheer();
+  const hadas=()=>{pushState({phase:'chaser',txt:'צ׳ייסר לבחירת הדס'});SFX.horn();
     showOv('🥃 צ׳ייסר לבחירת הדס!','הדס, בחרי מי שותה צ׳ייסר עכשיו 😈',[['שתו! המשך ➡️',()=>{hideOv();next()}]])};
   if(!(mx>0)||mx===mn){hadas();return}
   const lows=pool.filter(n=>score[n]===mn);
